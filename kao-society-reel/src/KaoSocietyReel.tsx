@@ -4,81 +4,57 @@ import {
   Sequence,
   useCurrentFrame,
   interpolate,
+  Audio,
+  staticFile,
 } from "remotion";
 import { VIDEO, SCENES, COLORS } from "./theme";
 import { IntroScene } from "./scenes/IntroScene";
-import { AwakeningScene } from "./scenes/AwakeningScene";
-import { OutdoorScene } from "./scenes/OutdoorScene";
-import { IndoorScene } from "./scenes/IndoorScene";
+import { WakeUpScene } from "./scenes/WakeUpScene";
+import { SwingScene } from "./scenes/SwingScene";
+import { ShowcaseScene } from "./scenes/ShowcaseScene";
 import { CommunityScene } from "./scenes/CommunityScene";
 import { OutroScene } from "./scenes/OutroScene";
 
-// Transition overlay between scenes
-const SceneTransition: React.FC<{
-  type: "fade" | "slide" | "glitch";
-  duration: number;
-}> = ({ type, duration }) => {
+// Smooth crossfade transition
+const CrossFade: React.FC<{ duration: number }> = ({ duration }) => {
   const frame = useCurrentFrame();
-
-  if (type === "fade") {
-    const opacity = interpolate(frame, [0, duration], [1, 0], {
-      extrapolateRight: "clamp",
-    });
-    return (
-      <AbsoluteFill
-        style={{
-          backgroundColor: COLORS.black,
-          opacity,
-          zIndex: 200,
-        }}
-      />
-    );
-  }
-
-  if (type === "slide") {
-    const translateX = interpolate(frame, [0, duration], [0, -VIDEO.width], {
-      extrapolateRight: "clamp",
-    });
-    return (
-      <AbsoluteFill
-        style={{
-          background: `linear-gradient(90deg, ${COLORS.greenHex}, ${COLORS.violet})`,
-          transform: `translateX(${translateX}px)`,
-          zIndex: 200,
-        }}
-      />
-    );
-  }
-
-  // Glitch transition
-  const progress = frame / duration;
-  const opacity = interpolate(progress, [0, 0.5, 1], [1, 0.5, 0], {
+  const opacity = interpolate(frame, [0, duration], [1, 0], {
     extrapolateRight: "clamp",
   });
   return (
-    <AbsoluteFill style={{ zIndex: 200 }}>
-      {[...Array(8)].map((_, i) => {
-        const sliceH = VIDEO.height / 8;
-        const offset =
-          Math.sin(frame * 10 + i * 3) *
-          40 *
-          interpolate(progress, [0, 0.5, 1], [1, 0.5, 0]);
-        return (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              top: i * sliceH,
-              left: offset,
-              width: VIDEO.width,
-              height: sliceH,
-              background:
-                i % 2 === 0 ? COLORS.greenHex : COLORS.violet,
-              opacity: opacity * 0.8,
-            }}
-          />
-        );
-      })}
+    <AbsoluteFill
+      style={{
+        backgroundColor: COLORS.darkBg,
+        opacity,
+        zIndex: 200,
+      }}
+    />
+  );
+};
+
+// Wipe transition with brand colors
+const WipeTransition: React.FC<{ duration: number; color?: string }> = ({
+  duration,
+  color = COLORS.violetDark,
+}) => {
+  const frame = useCurrentFrame();
+  const progress = interpolate(frame, [0, duration], [0, 1], {
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <AbsoluteFill style={{ zIndex: 200, overflow: "hidden" }}>
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: `${progress * 200}%`,
+          height: "100%",
+          background: `linear-gradient(90deg, ${color} 0%, ${color} 40%, transparent 100%)`,
+          transform: `translateX(${interpolate(progress, [0, 0.5, 1], [-100, 0, 100])}%)`,
+        }}
+      />
     </AbsoluteFill>
   );
 };
@@ -92,58 +68,64 @@ export const KaoSocietyReel: React.FC = () => {
         height: VIDEO.height,
       }}
     >
-      {/* Scene 1: Intro (0-3s, frames 0-90) */}
-      <Sequence from={SCENES.intro.start} durationInFrames={90}>
+      {/*
+        Audio track - place your audio file in public/audio/bgm.mp3
+        Uncomment when you have an audio file:
+      */}
+      {/* <Audio src={staticFile("audio/bgm.mp3")} volume={0.7} /> */}
+
+      {/* Scene 1: Intro - Monkey sleeping in dark jungle (0-3s) */}
+      <Sequence from={SCENES.intro.start} durationInFrames={SCENES.intro.duration}>
         <IntroScene />
       </Sequence>
 
-      {/* Transition: Glitch into Awakening */}
-      <Sequence from={85} durationInFrames={10}>
-        <SceneTransition type="glitch" duration={10} />
+      {/* Transition 1→2 */}
+      <Sequence from={SCENES.intro.duration - 8} durationInFrames={12}>
+        <CrossFade duration={12} />
       </Sequence>
 
-      {/* Scene 2: Awakening (3-6s, frames 90-180) */}
-      <Sequence from={SCENES.awakening.start} durationInFrames={90}>
-        <AwakeningScene />
+      {/* Scene 2: Wake Up - Dawn breaks, monkey wakes (3-6s) */}
+      <Sequence from={SCENES.wakeup.start} durationInFrames={SCENES.wakeup.duration}>
+        <WakeUpScene />
       </Sequence>
 
-      {/* Transition: Slide into Outdoor */}
-      <Sequence from={175} durationInFrames={10}>
-        <SceneTransition type="slide" duration={10} />
+      {/* Transition 2→3 */}
+      <Sequence from={SCENES.wakeup.start + SCENES.wakeup.duration - 8} durationInFrames={12}>
+        <WipeTransition duration={12} color={COLORS.jungleDark} />
       </Sequence>
 
-      {/* Scene 3: Outdoor (6-12s, frames 180-360) */}
-      <Sequence from={SCENES.outdoor.start} durationInFrames={180}>
-        <OutdoorScene />
+      {/* Scene 3: Swing - Monkey swings through jungle (6-10s) */}
+      <Sequence from={SCENES.swing.start} durationInFrames={SCENES.swing.duration}>
+        <SwingScene />
       </Sequence>
 
-      {/* Transition: Fade into Indoor */}
-      <Sequence from={355} durationInFrames={10}>
-        <SceneTransition type="fade" duration={10} />
+      {/* Transition 3→4 */}
+      <Sequence from={SCENES.swing.start + SCENES.swing.duration - 8} durationInFrames={12}>
+        <CrossFade duration={12} />
       </Sequence>
 
-      {/* Scene 4: Indoor (12-18s, frames 360-540) */}
-      <Sequence from={SCENES.indoor.start} durationInFrames={180}>
-        <IndoorScene />
+      {/* Scene 4: Showcase - Brand reveal (10-14s) */}
+      <Sequence from={SCENES.showcase.start} durationInFrames={SCENES.showcase.duration}>
+        <ShowcaseScene />
       </Sequence>
 
-      {/* Transition: Glitch into Community */}
-      <Sequence from={535} durationInFrames={10}>
-        <SceneTransition type="glitch" duration={10} />
+      {/* Transition 4→5 */}
+      <Sequence from={SCENES.showcase.start + SCENES.showcase.duration - 8} durationInFrames={12}>
+        <WipeTransition duration={12} color={COLORS.violetDark} />
       </Sequence>
 
-      {/* Scene 5: Community (18-22s, frames 540-660) */}
-      <Sequence from={SCENES.community.start} durationInFrames={120}>
+      {/* Scene 5: Community (14-17s) */}
+      <Sequence from={SCENES.community.start} durationInFrames={SCENES.community.duration}>
         <CommunityScene />
       </Sequence>
 
-      {/* Transition: Fade into Outro */}
-      <Sequence from={655} durationInFrames={10}>
-        <SceneTransition type="fade" duration={10} />
+      {/* Transition 5→6 */}
+      <Sequence from={SCENES.community.start + SCENES.community.duration - 8} durationInFrames={12}>
+        <CrossFade duration={12} />
       </Sequence>
 
-      {/* Scene 6: Outro (22-25s, frames 660-750) */}
-      <Sequence from={SCENES.outro.start} durationInFrames={90}>
+      {/* Scene 6: Outro - Logo + CTA (17-20s) */}
+      <Sequence from={SCENES.outro.start} durationInFrames={SCENES.outro.duration}>
         <OutroScene />
       </Sequence>
     </AbsoluteFill>

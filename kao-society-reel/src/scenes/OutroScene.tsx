@@ -1,151 +1,128 @@
 import React from "react";
-import {
-  useCurrentFrame,
-  interpolate,
-  spring,
-  useVideoConfig,
-} from "remotion";
-import { COLORS, VIDEO, FONTS } from "../theme";
+import { useCurrentFrame, interpolate, AbsoluteFill, spring, useVideoConfig } from "remotion";
+import { COLORS, VIDEO } from "../theme";
 import { MonkeyMascot } from "../components/MonkeyMascot";
-import { AnimatedText } from "../components/AnimatedText";
-import { GlowEffect } from "../effects/GlowEffect";
+import { Fireflies } from "../components/Fireflies";
 import { GrainOverlay } from "../effects/GrainOverlay";
 
 export const OutroScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Background mix animation
-  const gradientAngle = interpolate(frame, [0, 90], [135, 180]);
-
   // Logo entrance
-  const logoScale = spring({
-    frame: frame - 5,
+  const logoEntrance = spring({
+    frame,
     fps,
-    config: { damping: 8, stiffness: 80, mass: 1 },
+    config: { damping: 12, stiffness: 80 },
   });
+  const logoScale = interpolate(logoEntrance, [0, 1], [0.3, 1]);
+  const logoOpacity = interpolate(logoEntrance, [0, 1], [0, 1]);
 
   // Monkey entrance
   const monkeyEntrance = spring({
-    frame: frame - 15,
+    frame: frame - 8,
     fps,
     config: { damping: 10, stiffness: 100 },
   });
 
-  // CTA pulse
-  const ctaPulse = interpolate(
-    Math.sin(frame * 0.08),
-    [-1, 1],
-    [0.95, 1.05]
-  );
+  // CTA button pulse
+  const ctaPulse = interpolate(Math.sin(frame * 0.06), [-1, 1], [0.95, 1.05]);
+  const ctaGlow = interpolate(Math.sin(frame * 0.06), [-1, 1], [0.5, 1]);
 
-  // CTA entrance
-  const ctaEntrance = spring({
-    frame: frame - 50,
+  // Social handles entrance
+  const socialEntrance = spring({
+    frame: frame - 30,
     fps,
-    config: { damping: 12, stiffness: 100 },
+    config: { damping: 14, stiffness: 100 },
+  });
+
+  // Fade out at end
+  const fadeOut = interpolate(frame, [70, 90], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
   });
 
   return (
-    <div
-      style={{
-        width: VIDEO.width,
-        height: VIDEO.height,
-        background: `linear-gradient(${gradientAngle}deg, ${COLORS.greenDark} 0%, ${COLORS.violet} 50%, ${COLORS.violetDark} 100%)`,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      {/* Radial overlay */}
+    <AbsoluteFill style={{ opacity: fadeOut }}>
+      {/* Background */}
       <div
         style={{
           position: "absolute",
-          top: 0,
-          left: 0,
           width: "100%",
           height: "100%",
-          background: `radial-gradient(ellipse at 50% 40%, transparent 30%, rgba(0,0,0,0.4) 100%)`,
-          zIndex: 2,
+          background: `radial-gradient(ellipse at 50% 35%, ${COLORS.violet} 0%, ${COLORS.violetDark} 35%, ${COLORS.darkBg} 100%)`,
         }}
       />
 
-      {/* Animated rings */}
-      {[...Array(4)].map((_, i) => {
-        const ringScale = spring({
-          frame: frame - 10 - i * 8,
-          fps,
-          config: { damping: 15, stiffness: 60 },
-        });
-        return (
-          <div
-            key={i}
-            style={{
-              position: "absolute",
-              top: "38%",
-              left: "50%",
-              width: 200 + i * 120,
-              height: 200 + i * 120,
-              borderRadius: "50%",
-              border: `2px solid ${i % 2 === 0 ? COLORS.greenHex : COLORS.violetLight}`,
-              opacity: interpolate(ringScale, [0, 1], [0, 0.15 - i * 0.03]),
-              transform: `translate(-50%, -50%) scale(${ringScale})`,
-              zIndex: 3,
-            }}
-          />
-        );
-      })}
-
-      {/* Monkey - stylish and energetic */}
+      {/* Animated background pulse */}
       <div
         style={{
+          position: "absolute",
+          top: "25%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: 800 * logoScale,
+          height: 800 * logoScale,
+          borderRadius: "50%",
+          background: `radial-gradient(circle, ${COLORS.violetGlow} 0%, transparent 60%)`,
+          opacity: 0.3 * ctaGlow,
+          filter: "blur(60px)",
+        }}
+      />
+
+      <Fireflies count={8} color={COLORS.gold} />
+
+      {/* Monkey mascot */}
+      <div
+        style={{
+          position: "absolute",
+          top: VIDEO.height * 0.08,
+          left: VIDEO.width * 0.5 - 175,
           zIndex: 20,
-          transform: `scale(${monkeyEntrance * 1.1})`,
-          opacity: monkeyEntrance,
-          marginBottom: 20,
+          opacity: interpolate(monkeyEntrance, [0, 1], [0, 1]),
+          transform: `scale(${interpolate(monkeyEntrance, [0, 1], [0.5, 0.7])})`,
         }}
       >
-        <MonkeyMascot state="energetic" scale={1.1} accessory="sunglasses" />
+        <MonkeyMascot state="active" scale={1} />
       </div>
 
-      {/* KAO SOCIETY Logo Text */}
+      {/* KAO SOCIETY Logo */}
       <div
         style={{
-          zIndex: 20,
-          transform: `scale(${logoScale})`,
-          opacity: logoScale,
+          position: "absolute",
+          top: VIDEO.height * 0.42,
+          width: "100%",
           textAlign: "center",
-          marginTop: 10,
+          zIndex: 30,
+          opacity: logoOpacity,
+          transform: `scale(${logoScale})`,
         }}
       >
         <div
           style={{
-            fontFamily: FONTS.heading,
-            fontSize: 88,
+            fontFamily: "'Arial Black', sans-serif",
+            fontSize: 100,
             fontWeight: 900,
-            color: COLORS.white,
+            letterSpacing: "0.15em",
             textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            textShadow: `0 0 40px ${COLORS.violetGlow}, 0 0 80px ${COLORS.violetGlow}, 0 4px 20px rgba(0,0,0,0.5)`,
-            lineHeight: 1,
           }}
         >
-          KAO
+          <span style={{
+            color: COLORS.greenLight,
+            textShadow: `0 0 50px ${COLORS.greenHex}80, 0 0 100px ${COLORS.greenHex}40`,
+          }}>
+            KAO
+          </span>
         </div>
         <div
           style={{
-            fontFamily: FONTS.heading,
-            fontSize: 88,
+            fontFamily: "'Arial Black', sans-serif",
+            fontSize: 55,
             fontWeight: 900,
-            color: COLORS.white,
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-            textShadow: `0 0 40px ${COLORS.violetGlow}, 0 0 80px ${COLORS.violetGlow}, 0 4px 20px rgba(0,0,0,0.5)`,
-            lineHeight: 1,
-            marginTop: 5,
+            letterSpacing: "0.3em",
+            color: COLORS.offWhite,
+            textShadow: `0 0 30px ${COLORS.violetGlow}`,
+            marginTop: -10,
           }}
         >
           SOCIETY
@@ -155,67 +132,97 @@ export const OutroScene: React.FC = () => {
       {/* Tagline */}
       <div
         style={{
-          zIndex: 20,
-          marginTop: 25,
+          position: "absolute",
+          top: VIDEO.height * 0.58,
+          width: "100%",
+          textAlign: "center",
+          zIndex: 30,
         }}
       >
-        <AnimatedText
-          text="Outdoor & Indoor Experiences"
-          fontSize={32}
-          color={COLORS.offWhite}
-          delay={25}
-          style="bold"
-        />
+        {(() => {
+          const tagEntrance = spring({
+            frame: frame - 20,
+            fps,
+            config: { damping: 14, stiffness: 100 },
+          });
+          return (
+            <div
+              style={{
+                fontFamily: "'Helvetica Neue', sans-serif",
+                fontSize: 32,
+                color: COLORS.cream,
+                opacity: interpolate(tagEntrance, [0, 1], [0, 0.8]),
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+              }}
+            >
+              Outdoor · Indoor · Gaming · Cooking
+            </div>
+          );
+        })()}
       </div>
-
-      {/* Separator line */}
-      <div
-        style={{
-          width: interpolate(
-            spring({ frame: frame - 35, fps, config: { damping: 15 } }),
-            [0, 1],
-            [0, 300]
-          ),
-          height: 2,
-          background: `linear-gradient(90deg, ${COLORS.greenHex}, ${COLORS.violetLight})`,
-          marginTop: 30,
-          zIndex: 20,
-          opacity: 0.7,
-        }}
-      />
 
       {/* CTA Button */}
       <div
         style={{
-          zIndex: 20,
-          marginTop: 35,
-          transform: `scale(${ctaEntrance * ctaPulse})`,
-          opacity: ctaEntrance,
+          position: "absolute",
+          bottom: VIDEO.height * 0.25,
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          zIndex: 30,
+          opacity: interpolate(socialEntrance, [0, 1], [0, 1]),
+          transform: `translateY(${interpolate(socialEntrance, [0, 1], [30, 0])}px)`,
         }}
       >
         <div
           style={{
-            fontFamily: FONTS.heading,
-            fontSize: 36,
-            fontWeight: 700,
-            color: COLORS.white,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            padding: "18px 60px",
-            border: `3px solid ${COLORS.white}`,
+            padding: "22px 60px",
             borderRadius: 50,
-            background: `linear-gradient(135deg, ${COLORS.greenHex}40, ${COLORS.violet}40)`,
-            boxShadow: `0 0 30px ${COLORS.violetGlow}, 0 0 60px rgba(123, 141, 62, 0.2)`,
-            textShadow: "0 2px 10px rgba(0,0,0,0.3)",
+            background: `linear-gradient(135deg, ${COLORS.greenHex}, ${COLORS.greenLight})`,
+            boxShadow: `0 0 ${30 * ctaGlow}px ${COLORS.greenHex}60, 0 8px 25px rgba(0,0,0,0.3)`,
+            transform: `scale(${ctaPulse})`,
           }}
         >
-          Follow Us
+          <span
+            style={{
+              fontFamily: "'Arial Black', sans-serif",
+              fontSize: 36,
+              fontWeight: 900,
+              color: COLORS.white,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+            }}
+          >
+            Follow us
+          </span>
         </div>
       </div>
 
-      <GlowEffect color={COLORS.violetLight} intensity={0.25} position="center" />
-      <GlowEffect color={COLORS.greenHex} intensity={0.15} position="bottom" />
-      <GrainOverlay intensity={0.04} />
-    </div>
+      {/* Social handle */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: VIDEO.height * 0.14,
+          width: "100%",
+          textAlign: "center",
+          zIndex: 30,
+          opacity: interpolate(socialEntrance, [0, 1], [0, 0.7]),
+        }}
+      >
+        <div
+          style={{
+            fontFamily: "'Helvetica Neue', sans-serif",
+            fontSize: 30,
+            color: COLORS.offWhite,
+            letterSpacing: "0.05em",
+          }}
+        >
+          @kao.society
+        </div>
+      </div>
+
+      <GrainOverlay intensity={0.03} />
+    </AbsoluteFill>
   );
 };
