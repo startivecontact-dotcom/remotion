@@ -1,7 +1,7 @@
 import React from "react";
 import { useCurrentFrame, interpolate, AbsoluteFill, spring, useVideoConfig } from "remotion";
 import { COLORS, VIDEO } from "../theme";
-import { MonkeyMascot } from "../components/MonkeyMascot";
+import { RealisticMonkey } from "../components/RealisticMonkey";
 import { JungleBackground } from "../components/JungleBackground";
 import { FallingLeaves } from "../components/FallingLeaves";
 import { LightRays } from "../components/LightRays";
@@ -12,131 +12,140 @@ export const SwingScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Monkey swings across screen
-  const swingX = interpolate(frame, [0, 40, 80, 120], [-200, 100, 300, 540], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const swingY = interpolate(frame, [0, 30, 60, 90, 120], [400, 300, 350, 280, 350], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const swingRotation = interpolate(frame, [0, 30, 60, 90, 120], [-15, 5, -10, 8, -5], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-  const swingScale = interpolate(frame, [0, 60, 120], [0.8, 1.2, 1], {
+  // Monkey walks across the screen
+  const walkX = interpolate(frame, [0, 120], [-250, VIDEO.width + 100], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
-  // Background scrolls
-  const bgScroll = interpolate(frame, [0, 120], [0, -200], { extrapolateRight: "clamp" });
+  // Background parallax scroll
+  const bgScroll = interpolate(frame, [0, 120], [0, -300], { extrapolateRight: "clamp" });
 
   // Words appear one by one
-  const words = ["OUTDOOR", "INDOOR", "GAMING", "COOKING"];
-  const wordDelay = 25;
+  const words = [
+    { text: "PLEIN AIR", color: COLORS.greenLight },
+    { text: "INTÉRIEUR", color: COLORS.violetLight },
+    { text: "GAMING", color: COLORS.gold },
+    { text: "CUISINE", color: COLORS.greenHex },
+  ];
 
   return (
     <AbsoluteFill>
-      <div style={{ transform: `translateX(${bgScroll * 0.3}px)` }}>
+      <div style={{ transform: `translateX(${bgScroll * 0.2}px)` }}>
         <JungleBackground timeOfDay="day" />
       </div>
 
-      <LightRays direction="top-left" color="rgba(200, 255, 150, 0.06)" intensity={0.8} />
-      <FallingLeaves count={15} speed={1.2} />
-      <Fireflies count={6} color={COLORS.greenLight} />
+      <LightRays direction="top-left" color="rgba(200, 255, 150, 0.06)" intensity={0.7} />
+      <FallingLeaves count={18} speed={1.3} />
+      <Fireflies count={5} color={COLORS.greenLight} />
 
-      {/* Speed lines / motion blur effect */}
-      {frame < 100 && (
-        <svg
-          width={VIDEO.width}
-          height={VIDEO.height}
-          style={{ position: "absolute", zIndex: 12, opacity: 0.15 }}
-        >
-          {[...Array(8)].map((_, i) => {
-            const y = 300 + i * 150;
-            const len = 200 + Math.sin(frame * 0.1 + i) * 100;
-            return (
-              <line
-                key={i}
-                x1={swingX + 250 + 100}
-                y1={y}
-                x2={swingX + 250 + 100 + len}
-                y2={y + Math.sin(i) * 20}
-                stroke={COLORS.greenLight}
-                strokeWidth="2"
-                opacity={interpolate(frame, [0, 30, 90, 120], [0, 0.5, 0.5, 0], {
-                  extrapolateLeft: "clamp",
-                  extrapolateRight: "clamp",
-                })}
-              />
-            );
-          })}
-        </svg>
-      )}
+      {/* Motion trail behind monkey */}
+      {[...Array(5)].map((_, i) => {
+        const trailX = walkX - (i + 1) * 60;
+        const trailOpacity = interpolate(i, [0, 4], [0.15, 0.02]);
+        return (
+          <div
+            key={i}
+            style={{
+              position: "absolute",
+              top: VIDEO.height * 0.38,
+              left: trailX,
+              zIndex: 18,
+              opacity: trailOpacity,
+              filter: `blur(${2 + i * 2}px)`,
+            }}
+          >
+            <RealisticMonkey mode="walking" scale={0.85} />
+          </div>
+        );
+      })}
 
-      {/* Monkey swinging */}
+      {/* Walking monkey */}
       <div
         style={{
           position: "absolute",
-          left: swingX,
-          top: swingY,
+          top: VIDEO.height * 0.38,
+          left: walkX,
           zIndex: 20,
-          transform: `scale(${swingScale})`,
         }}
       >
-        <MonkeyMascot state="swinging" scale={0.9} rotation={swingRotation} />
+        <RealisticMonkey mode="walking" scale={0.85} direction={1} />
       </div>
 
-      {/* Activity words appearing */}
+      {/* Dust particles at feet */}
+      {frame > 10 && [...Array(6)].map((_, i) => {
+        const dustX = walkX + 200 - i * 30 - Math.random() * 10;
+        const dustY = VIDEO.height * 0.38 + 420 - i * 8;
+        const dustOpacity = interpolate(i, [0, 5], [0.3, 0]);
+        return (
+          <div
+            key={`dust-${i}`}
+            style={{
+              position: "absolute",
+              left: dustX + Math.sin(frame * 0.1 + i) * 5,
+              top: dustY - frame * 0.3,
+              width: 6 + i * 2,
+              height: 6 + i * 2,
+              borderRadius: "50%",
+              backgroundColor: "rgba(180, 160, 120, 0.3)",
+              filter: "blur(2px)",
+              opacity: dustOpacity,
+              zIndex: 19,
+            }}
+          />
+        );
+      })}
+
+      {/* Activity words - big and cinematic */}
       <div
         style={{
           position: "absolute",
-          bottom: VIDEO.height * 0.12,
+          bottom: VIDEO.height * 0.08,
           width: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 8,
+          gap: 6,
           zIndex: 40,
         }}
       >
         {words.map((word, i) => {
+          const wordDelay = 15 + i * 22;
           const entrance = spring({
-            frame: frame - 20 - i * wordDelay,
+            frame: frame - wordDelay,
             fps,
             config: { damping: 10, stiffness: 120 },
           });
-          const wordOpacity = interpolate(entrance, [0, 1], [0, 1]);
-          const wordX = interpolate(entrance, [0, 1], [i % 2 === 0 ? -100 : 100, 0]);
-          const isHighlighted = i === Math.floor((frame - 20) / wordDelay) % words.length;
+          const exit = i < words.length - 1
+            ? interpolate(frame, [wordDelay + 20, wordDelay + 28], [1, 0.3], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })
+            : 1;
+          const isActive = frame >= wordDelay && frame < wordDelay + 25;
 
           return (
             <div
-              key={word}
+              key={word.text}
               style={{
                 fontFamily: "'Arial Black', sans-serif",
-                fontSize: isHighlighted ? 64 : 48,
+                fontSize: isActive ? 68 : 48,
                 fontWeight: 900,
-                color: isHighlighted ? COLORS.greenLight : COLORS.offWhite,
+                color: isActive ? word.color : COLORS.offWhite,
                 textTransform: "uppercase",
                 letterSpacing: "0.1em",
-                opacity: wordOpacity,
-                transform: `translateX(${wordX}px)`,
-                textShadow: isHighlighted
-                  ? `0 0 30px ${COLORS.greenHex}80, 0 0 60px ${COLORS.greenHex}40`
+                opacity: interpolate(entrance, [0, 1], [0, 1]) * exit,
+                transform: `translateX(${interpolate(entrance, [0, 1], [i % 2 === 0 ? -80 : 80, 0])}px) scale(${isActive ? 1 : 0.85})`,
+                textShadow: isActive
+                  ? `0 0 40px ${word.color}80, 0 0 80px ${word.color}30`
                   : "0 3px 10px rgba(0,0,0,0.5)",
-                transition: "font-size 0.3s, color 0.3s",
+                transition: "font-size 0.15s",
               }}
             >
-              {word}
+              {word.text}
             </div>
           );
         })}
       </div>
 
-      <GrainOverlay intensity={0.03} />
+      <GrainOverlay intensity={0.025} />
     </AbsoluteFill>
   );
 };

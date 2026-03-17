@@ -1,39 +1,34 @@
 import React from "react";
 import { useCurrentFrame, interpolate, AbsoluteFill, spring, useVideoConfig } from "remotion";
 import { COLORS, VIDEO } from "../theme";
-import { MonkeyMascot } from "../components/MonkeyMascot";
+import { RealisticMonkey } from "../components/RealisticMonkey";
 import { GrainOverlay } from "../effects/GrainOverlay";
 
 export const ShowcaseScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Animated gradient background
-  const gradAngle = interpolate(frame, [0, 120], [135, 180], { extrapolateRight: "clamp" });
+  // Background gradient rotation
+  const gradAngle = interpolate(frame, [0, 120], [135, 200], { extrapolateRight: "clamp" });
 
-  // Hexagon grid pattern animation
-  const gridOpacity = interpolate(frame, [0, 20], [0, 0.15], { extrapolateRight: "clamp" });
-
-  // Monkey pops in
+  // Monkey stands and celebrates
   const monkeyEntrance = spring({
     frame: frame - 5,
     fps,
     config: { damping: 10, stiffness: 80 },
   });
-  const monkeyScale = interpolate(monkeyEntrance, [0, 1], [0.3, 0.75]);
-  const monkeyOpacity = interpolate(monkeyEntrance, [0, 1], [0, 1]);
 
   // Brand features
   const features = [
-    { icon: "🏔️", text: "OUTDOOR", color: COLORS.greenLight },
-    { icon: "🏠", text: "INDOOR", color: COLORS.violetLight },
-    { icon: "🎮", text: "GAMING", color: COLORS.gold },
-    { icon: "🍳", text: "COOKING", color: COLORS.greenHex },
+    { icon: "🏔️", text: "PLEIN AIR", desc: "Randonnée, escalade, nature", color: COLORS.greenLight },
+    { icon: "🏠", text: "INTÉRIEUR", desc: "Détente, créativité, bien-être", color: COLORS.violetLight },
+    { icon: "🎮", text: "GAMING", desc: "Jeux, streams, tournois", color: COLORS.gold },
+    { icon: "🍳", text: "CUISINE", desc: "Recettes, partage, saveurs", color: COLORS.greenHex },
   ];
 
   return (
     <AbsoluteFill>
-      {/* Animated gradient background */}
+      {/* Animated gradient bg */}
       <div
         style={{
           position: "absolute",
@@ -43,54 +38,50 @@ export const ShowcaseScene: React.FC = () => {
         }}
       />
 
-      {/* Geometric pattern overlay */}
+      {/* Hex grid pattern */}
       <svg
         width={VIDEO.width}
         height={VIDEO.height}
-        style={{ position: "absolute", opacity: gridOpacity, zIndex: 1 }}
+        style={{ position: "absolute", opacity: 0.1, zIndex: 1 }}
       >
-        {[...Array(12)].map((_, row) =>
-          [...Array(8)].map((_, col) => {
-            const cx = col * 150 + (row % 2) * 75;
-            const cy = row * 170;
-            const pulse = interpolate(
-              Math.sin(frame * 0.02 + row + col),
-              [-1, 1],
-              [0.3, 1]
-            );
+        {[...Array(10)].map((_, row) =>
+          [...Array(7)].map((_, col) => {
+            const cx = col * 160 + (row % 2) * 80;
+            const cy = row * 185;
+            const pulse = interpolate(Math.sin(frame * 0.015 + row + col), [-1, 1], [0.2, 0.8]);
             return (
               <polygon
                 key={`${row}-${col}`}
-                points={hexPoints(cx, cy, 40)}
+                points={hexPoints(cx, cy, 45)}
                 fill="none"
                 stroke={COLORS.violetLight}
                 strokeWidth="1"
-                opacity={pulse * 0.3}
+                opacity={pulse * 0.4}
               />
             );
           })
         )}
       </svg>
 
-      {/* Monkey mascot - top center */}
+      {/* Monkey - standing, celebrating */}
       <div
         style={{
           position: "absolute",
-          top: VIDEO.height * 0.08,
-          left: VIDEO.width * 0.5 - 190,
+          top: VIDEO.height * 0.06,
+          left: VIDEO.width * 0.5 - 160,
           zIndex: 20,
-          opacity: monkeyOpacity,
-          transform: `scale(${monkeyScale})`,
+          opacity: interpolate(monkeyEntrance, [0, 1], [0, 1]),
+          transform: `scale(${interpolate(monkeyEntrance, [0, 1], [0.4, 0.8])})`,
         }}
       >
-        <MonkeyMascot state="active" scale={1} />
+        <RealisticMonkey mode="celebrating" scale={1} />
       </div>
 
       {/* KAO SOCIETY text */}
       <div
         style={{
           position: "absolute",
-          top: VIDEO.height * 0.42,
+          top: VIDEO.height * 0.38,
           width: "100%",
           textAlign: "center",
           zIndex: 30,
@@ -98,29 +89,38 @@ export const ShowcaseScene: React.FC = () => {
       >
         {(() => {
           const titleEntrance = spring({
-            frame: frame - 15,
+            frame: frame - 12,
             fps,
             config: { damping: 14, stiffness: 100 },
           });
           return (
             <div
               style={{
-                fontFamily: "'Arial Black', sans-serif",
-                fontSize: 90,
-                fontWeight: 900,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
                 opacity: interpolate(titleEntrance, [0, 1], [0, 1]),
-                transform: `scale(${interpolate(titleEntrance, [0, 1], [0.8, 1])})`,
+                transform: `scale(${interpolate(titleEntrance, [0, 1], [0.7, 1])})`,
               }}
             >
-              <span style={{ color: COLORS.greenLight, textShadow: `0 0 40px ${COLORS.greenHex}80` }}>
+              <div style={{
+                fontFamily: "'Arial Black', sans-serif",
+                fontSize: 95,
+                fontWeight: 900,
+                letterSpacing: "0.12em",
+                color: COLORS.greenLight,
+                textShadow: `0 0 50px ${COLORS.greenHex}80`,
+              }}>
                 KAO
-              </span>
-              <br />
-              <span style={{ color: COLORS.offWhite, textShadow: `0 0 30px ${COLORS.violetGlow}` }}>
+              </div>
+              <div style={{
+                fontFamily: "'Arial Black', sans-serif",
+                fontSize: 60,
+                fontWeight: 900,
+                letterSpacing: "0.25em",
+                color: COLORS.offWhite,
+                textShadow: `0 0 30px ${COLORS.violetGlow}`,
+                marginTop: -5,
+              }}>
                 SOCIETY
-              </span>
+              </div>
             </div>
           );
         })()}
@@ -130,23 +130,23 @@ export const ShowcaseScene: React.FC = () => {
       <div
         style={{
           position: "absolute",
-          top: VIDEO.height * 0.58,
+          top: VIDEO.height * 0.54,
           width: "100%",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 20,
-          padding: "0 60px",
+          gap: 16,
+          padding: "0 50px",
           zIndex: 30,
         }}
       >
         {features.map((feat, i) => {
           const cardEntrance = spring({
-            frame: frame - 30 - i * 12,
+            frame: frame - 25 - i * 10,
             fps,
             config: { damping: 12, stiffness: 100 },
           });
-          const cardX = interpolate(cardEntrance, [0, 1], [i % 2 === 0 ? -200 : 200, 0]);
+          const cardX = interpolate(cardEntrance, [0, 1], [i % 2 === 0 ? -250 : 250, 0]);
           const cardOpacity = interpolate(cardEntrance, [0, 1], [0, 1]);
 
           return (
@@ -155,29 +155,37 @@ export const ShowcaseScene: React.FC = () => {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 20,
-                padding: "18px 40px",
-                borderRadius: 20,
-                background: `linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)`,
-                border: `1px solid ${feat.color}40`,
-                backdropFilter: "blur(10px)",
+                gap: 18,
+                padding: "16px 35px",
+                borderRadius: 18,
+                background: "rgba(255,255,255,0.06)",
+                border: `1px solid ${feat.color}30`,
                 opacity: cardOpacity,
                 transform: `translateX(${cardX}px)`,
-                width: 500,
+                width: 520,
               }}
             >
-              <span style={{ fontSize: 44 }}>{feat.icon}</span>
-              <span
-                style={{
+              <span style={{ fontSize: 42 }}>{feat.icon}</span>
+              <div>
+                <div style={{
                   fontFamily: "'Arial Black', sans-serif",
-                  fontSize: 36,
+                  fontSize: 30,
                   fontWeight: 900,
                   color: feat.color,
-                  letterSpacing: "0.08em",
-                }}
-              >
-                {feat.text}
-              </span>
+                  letterSpacing: "0.06em",
+                }}>
+                  {feat.text}
+                </div>
+                <div style={{
+                  fontFamily: "'Helvetica Neue', sans-serif",
+                  fontSize: 18,
+                  color: COLORS.cream,
+                  opacity: 0.7,
+                  marginTop: 2,
+                }}>
+                  {feat.desc}
+                </div>
+              </div>
             </div>
           );
         })}
@@ -187,20 +195,20 @@ export const ShowcaseScene: React.FC = () => {
       <div
         style={{
           position: "absolute",
-          top: VIDEO.height * 0.15,
+          top: VIDEO.height * 0.12,
           left: "50%",
           transform: "translate(-50%, -50%)",
-          width: 400,
-          height: 400,
+          width: 450,
+          height: 450,
           borderRadius: "50%",
-          background: `radial-gradient(circle, ${COLORS.violetGlow} 0%, transparent 70%)`,
-          opacity: interpolate(Math.sin(frame * 0.03), [-1, 1], [0.2, 0.4]),
+          background: `radial-gradient(circle, ${COLORS.violetGlow} 0%, transparent 65%)`,
+          opacity: interpolate(Math.sin(frame * 0.03), [-1, 1], [0.15, 0.35]),
           filter: "blur(40px)",
           zIndex: 10,
         }}
       />
 
-      <GrainOverlay intensity={0.03} />
+      <GrainOverlay intensity={0.025} />
     </AbsoluteFill>
   );
 };
